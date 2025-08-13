@@ -1,2 +1,2 @@
-# Updated-Fno-Tracker
-Test with additional Filter
+# FnO-Tracker
+Track stock market update's on FnO and Other details on Daily basis
