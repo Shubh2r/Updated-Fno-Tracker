@@ -1,11 +1,26 @@
-from nsepython import nse_optionchain_scrapper
+from nsepython import nse_optionchain_scrapper, nse_index_quote
 import pandas as pd
-import datetime, os
+import datetime, os, json
+import traceback
 
+# 📁 Create folders
 os.makedirs("data", exist_ok=True)
+
+# 📅 Date setup
 today = datetime.date.today()
 date_str = today.strftime("%Y-%m-%d")
 
+# 📉 Save VIX data
+def fetch_vix():
+    try:
+        vix_data = nse_index_quote("India VIX")
+        with open(f"data/vix_{date_str}.json", "w") as f:
+            json.dump(vix_data, f, indent=2)
+        print(f"🌪️ VIX data saved.")
+    except Exception as e:
+        print(f"⚠️ Error fetching VIX: {e}")
+
+# 🧹 Clean and flatten option chain row
 def extract_flattened_rows(option_data, spot):
     strike = option_data.get("strikePrice")
     expiry = option_data.get("expiryDate")
@@ -35,6 +50,7 @@ def extract_flattened_rows(option_data, spot):
         "PE_LTP": pe.get("lastPrice", 0)
     }
 
+# 📦 Fetch and save FnO data
 def fetch_and_save(symbol):
     try:
         chain = nse_optionchain_scrapper(symbol)
@@ -43,10 +59,19 @@ def fetch_and_save(symbol):
 
         rows = [extract_flattened_rows(row, spot) for row in raw]
         clean_rows = [r for r in rows if r]
-        pd.DataFrame(clean_rows).to_csv(f"data/{symbol}_{date_str}.csv", index=False)
-        print(f"✅ Saved {len(clean_rows)} rows for {symbol}")
-    except Exception as e:
-        print(f"⚠️ Error fetching {symbol}: {e}")
 
+        df = pd.DataFrame(clean_rows)
+        df.to_csv(f"data/{symbol}_{date_str}.csv", index=False)
+
+        with open(f"data/{symbol}_spot_{date_str}.txt", "w") as f:
+            f.write(str(spot))
+
+        print(f"✅ Saved {len(clean_rows)} rows for {symbol} | Spot: {spot}")
+    except Exception:
+        print(f"⚠️ Error fetching {symbol}:")
+        traceback.print_exc()
+
+# 🚀 Run fetch tasks
+fetch_vix()
 fetch_and_save("BANKNIFTY")
 fetch_and_save("NIFTY")
