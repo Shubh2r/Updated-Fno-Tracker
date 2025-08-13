@@ -3,11 +3,12 @@ import os
 import datetime
 import argparse
 import yfinance as yf
-from nsepython import nse_optionchain_scrapper
+from nsepython import nse_optionchain_scrapper, nse_index_quote
 
-# 📁 Create folders if missing
+# 📁 Create folders
 os.makedirs("data", exist_ok=True)
 os.makedirs("report", exist_ok=True)
+os.makedirs("performance", exist_ok=True)
 
 # 📅 Dates
 today = datetime.date.today()
@@ -21,7 +22,7 @@ parser.add_argument("--mode", choices=["evening", "morning"], default="evening")
 args = parser.parse_args()
 MODE = args.mode
 
-# 📈 Fetch global indices
+# 🌐 Global indices
 def fetch_global_indices():
     indices = {
         "Dow": "^DJI",
@@ -32,7 +33,7 @@ def fetch_global_indices():
     summary = {}
     for name, ticker in indices.items():
         try:
-            data = yf.download(ticker, period="2d", interval="1d", progress=False, auto_adjust=False)
+            data = yf.download(ticker, period="2d", interval="1d", progress=False)
             if data.empty or len(data) < 2:
                 summary[name] = {"error": "Insufficient data"}
                 continue
@@ -43,7 +44,15 @@ def fetch_global_indices():
             summary[name] = {"error": str(e)}
     return summary
 
-# 🔍 Extract FnO data rows
+# 🌪️ VIX data
+def fetch_vix():
+    try:
+        vix_data = nse_index_quote("India VIX")
+        return float(vix_data.get("lastPrice", 0))
+    except:
+        return 0
+
+# 🧹 Clean and flatten option chain row
 def extract_flattened_rows(option_data, spot):
     strike = option_data.get("strikePrice")
     expiry = option_data.get("expiryDate")
@@ -56,7 +65,6 @@ def extract_flattened_rows(option_data, spot):
         return None
     if abs(strike - spot) > 1500:
         return None
-
     try:
         exp_date = datetime.datetime.strptime(expiry, "%d-%b-%Y").date()
         if exp_date < today:
@@ -77,7 +85,7 @@ def extract_flattened_rows(option_data, spot):
         "PE_LTP": pe.get("lastPrice", 0)
     }
 
-# 📦 Fetch and save data
+# 📦 Fetch and save FnO data
 def fetch_and_save(symbol):
     try:
         chain = nse_optionchain_scrapper(symbol)
@@ -92,8 +100,29 @@ def fetch_and_save(symbol):
     except Exception as e:
         print(f"⚠️ Error fetching {symbol}: {e}")
 
-# 🧠 Analyze and suggest trades
-def analyze(symbol, global_data):
+# 🧠 Trade scoring
+def interpret_pcr(pcr):
+    if pcr == "N/A":
+        return "Unknown"
+    return "Bullish" if pcr < 0.9 else "Bearish" if pcr > 1.3 else "Neutral"
+
+def score_trade(pcr_sentiment, vol_surge, oi_trend, vix_level, global_score):
+    score = 0
+    if pcr_sentiment == "Bullish":
+        score += 25
+    elif pcr_sentiment == "Neutral":
+        score += 15
+    if vol_surge:
+        score += 25
+    if oi_trend == "Increasing":
+        score += 20
+    if vix_level < 14:
+        score += 15
+    score += global_score
+    return score
+
+# 🔍 Analyze and suggest trades
+def analyze(symbol, global_data, vix_level):
     date_to_use = tomorrow_str if MODE == "evening" else today_str
     filename = f"data/{symbol}_{date_to_use}.csv"
     if not os.path.exists(filename):
@@ -102,7 +131,8 @@ def analyze(symbol, global_data):
     df = pd.read_csv(filename)
     ce_oi, pe_oi = df["CE_OI"].sum(), df["PE_OI"].sum()
     pcr = round(pe_oi / ce_oi, 2) if ce_oi else "N/A"
-    top_col = "CE_TotVol" if pcr < 1 else "PE_TotVol"
+    pcr_sentiment = interpret_pcr(pcr)
+    top_col = "CE_TotVol" if pcr_sentiment == "Bullish" else "PE_TotVol"
 
     try:
         top_strike = df.sort_values(top_col, ascending=False).iloc[0]["strikePrice"]
@@ -111,69 +141,66 @@ def analyze(symbol, global_data):
 
     row = df[df["strikePrice"] == top_strike].iloc[0]
     vol = row[top_col]
-    oi = row["CE_OI"] if pcr < 1 else row["PE_OI"]
-    ltp = row["CE_LTP"] if pcr < 1 else row["PE_LTP"]
-    ident = row["identifier_CE"] if pcr < 1 else row["identifier_PE"]
+    oi = row["CE_OI"] if pcr_sentiment == "Bullish" else row["PE_OI"]
+    ltp = row["CE_LTP"] if pcr_sentiment == "Bullish" else row["PE_LTP"]
+    ident = row["identifier_CE"] if pcr_sentiment == "Bullish" else row["identifier_PE"]
     expiry = row["expiryDate"]
 
-    entry = round(ltp, 2)
-    target = round(entry * 1.5, 2)
-    stop = round(entry * 0.7, 2)
+    # Volume surge detection
+    recent_vols = df[top_col].sort_values(ascending=False).head(5)
+    avg_vol = recent_vols.mean()
+    vol_surge = vol > 2 * avg_vol
 
+    # OI trend (simple check)
+    oi_trend = "Increasing" if oi > df[top_col].mean() else "Flat"
+
+    # Global sentiment score
     try:
-        sentiment_float = sum(
+        global_score = sum(
             float(v.get("change", 0)) for v in global_data.values()
             if isinstance(v, dict) and "change" in v
         )
     except:
-        sentiment_float = 0
+        global_score = 0
+
+    entry = round(ltp, 2)
+    target = round(entry * 1.5, 2)
+    stop = round(entry * 0.7, 2)
+    score = score_trade(pcr_sentiment, vol_surge, oi_trend, vix_level, global_score)
 
     tag = (
-        "✅ Confirmed" if MODE == "morning" and sentiment_float > 0
-        else "⚠️ Global Risk" if sentiment_float < 0
-        else "🔍 Prelim"
+        "✅ Strong Signal" if score >= 80 else
+        "⚠️ Moderate Signal" if score >= 50 else
+        "❌ Weak Signal"
     )
+
+    # Log performance
+    log_row = {
+        "date": date_to_use,
+        "symbol": symbol,
+        "strike": top_strike,
+        "entry": entry,
+        "target": target,
+        "stop": stop,
+        "expiry": expiry,
+        "score": score,
+        "outcome": "Pending"
+    }
+    log_df = pd.DataFrame([log_row])
+    log_path = "performance/performance_log.csv"
+    if os.path.exists(log_path):
+        log_df.to_csv(log_path, mode="a", header=False, index=False)
+    else:
+        log_df.to_csv(log_path, index=False)
 
     return [
         f"## 📘 {symbol} ({MODE.capitalize()} Mode)",
-        f"- 📈 PCR: `{pcr}`",
+        f"- 🔄 PCR: `{pcr}` → `{pcr_sentiment}`",
         f"- 🔢 Top Strike: `{top_strike}`",
         f"- 📆 Expiry: `{expiry}`",
         f"- 🎫 Symbol: `{ident}`",
         f"- 💰 Entry: ₹{entry}",
         f"- 🎯 Target: ₹{target}",
         f"- ⛔ Stop-Loss: ₹{stop}",
-        f"- 🌐 Global Sentiment: `{sentiment_float}`",
-        f"### Trade Signal: {tag} ⇒ `{'Call' if pcr < 1 else 'Put'}` Option"
-    ]
-
-# 📑 Generate markdown report
-def generate_report():
-    global_data = fetch_global_indices()
-    date_to_use = tomorrow_str if MODE == "evening" else today_str
-    summary_lines = [f"# 📊 FnO Tracker Report – {date_to_use}"]
-
-    for name, vals in global_data.items():
-        if "error" in vals:
-            summary_lines.append(f"- ⚠️ {name}: `{vals['error']}`")
-        else:
-            summary_lines.append(f"- 🌐 {name}: Change `{vals['change']}` ({vals['percent']}%)")
-
-    for symbol in ["BANKNIFTY", "NIFTY"]:
-        summary_lines += analyze(symbol, global_data)
-
-    file_name = f"report/fno_{MODE}_report_{date_to_use}.md"
-    with open(file_name, "w") as f:
-        f.write("\n".join(summary_lines))
-    print(f"📝 Report saved as {file_name}")
-
-# 🚀 Final execution block with error trace
-if __name__ == "__main__":
-    import traceback
-    try:
-        fetch_and_save("BANKNIFTY")
-        fetch_and_save("NIFTY")
-        generate_report()
-    except Exception:
-        traceback.print_exc()
-        exit(1)
+        f"- 🚀 Volume Surge: `{vol_surge}`",
+        f"- 📊
