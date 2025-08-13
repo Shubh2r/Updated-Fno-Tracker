@@ -3,7 +3,7 @@ import os
 import datetime
 import argparse
 import yfinance as yf
-from nsepython import nse_optionchain_scrapper, nse_index_quote
+from nsepython import nse_optionchain_scrapper, nsefetch
 
 # 📁 Create folders
 os.makedirs("data", exist_ok=True)
@@ -44,12 +44,15 @@ def fetch_global_indices():
             summary[name] = {"error": str(e)}
     return summary
 
-# 🌪️ VIX data
+# 🌪️ VIX data using nsefetch
 def fetch_vix():
     try:
-        vix_data = nse_index_quote("India VIX")
-        return float(vix_data.get("lastPrice", 0))
-    except:
+        url = "https://www.nseindia.com/api/option-chain-indices?symbol=INDIA%20VIX"
+        data = nsefetch(url)
+        vix_value = data["records"]["underlyingValue"]
+        return float(vix_value)
+    except Exception as e:
+        print(f"⚠️ VIX fetch error: {e}")
         return 0
 
 # 🧹 Clean and flatten option chain row
@@ -199,47 +202,4 @@ def analyze(symbol, global_data, vix_level):
         f"- ⛔ Stop-Loss: ₹{stop}",
         f"- 🚀 Volume Surge: `{vol_surge}`",
         f"- 🧮 Signal Score: `{score}`",
-        f"### Trade Signal: {tag} ⇒ `{'Call' if pcr_sentiment == 'Bullish' else 'Put'}` Option"
-    ]
-
-# 📑 Generate markdown report
-def generate_report():
-    global_data = fetch_global_indices()
-    vix_level = fetch_vix()
-    date_to_use = tomorrow_str if MODE == "evening" else today_str
-    summary_lines = [f"# 📊 FnO Tracker Report – {date_to_use}"]
-    summary_lines.append(f"- 🌪️ India VIX: `{vix_level}`")
-
-    for name, vals in global_data.items():
-        if "error" in vals:
-            summary_lines.append(f"- ⚠️ {name}: `{vals['error']}`")
-        else:
-            summary_lines.append(f"- 🌐 {name}: Change `{vals['change']}` ({vals['percent']}%)")
-
-    for symbol in ["BANKNIFTY", "NIFTY"]:
-        summary_lines += analyze(symbol, global_data, vix_level)
-
-    file_name = f"report/fno_{MODE}_report_{date_to_use}.md"
-    with open(file_name, "w") as f:
-        f.write("\n".join(summary_lines))
-    print(f"📝 Report saved as {file_name}")
-
-# 🧾 Generate performance summary
-def generate_performance_summary():
-    try:
-        import generate_performance_summary as gps
-        gps.generate_summary()
-    except Exception as e:
-        print(f"⚠️ Error generating performance summary: {e}")
-
-# 🚀 Final execution block
-if __name__ == "__main__":
-    import traceback
-    try:
-        fetch_and_save("BANKNIFTY")
-        fetch_and_save("NIFTY")
-        generate_report()
-        generate_performance_summary()
-    except Exception:
-        traceback.print_exc()
-        exit(1)
+        f"### Trade Signal: {tag} ⇒ `
