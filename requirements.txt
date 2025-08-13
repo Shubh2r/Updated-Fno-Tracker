@@ -2,3 +2,5 @@ nsepython
 pandas
 matplotlib
 yfinance
+plotly
+dash
