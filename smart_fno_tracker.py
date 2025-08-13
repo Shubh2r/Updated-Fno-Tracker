@@ -146,15 +146,11 @@ def analyze(symbol, global_data, vix_level):
     ident = row["identifier_CE"] if pcr_sentiment == "Bullish" else row["identifier_PE"]
     expiry = row["expiryDate"]
 
-    # Volume surge detection
     recent_vols = df[top_col].sort_values(ascending=False).head(5)
     avg_vol = recent_vols.mean()
     vol_surge = vol > 2 * avg_vol
-
-    # OI trend (simple check)
     oi_trend = "Increasing" if oi > df[top_col].mean() else "Flat"
 
-    # Global sentiment score
     try:
         global_score = sum(
             float(v.get("change", 0)) for v in global_data.values()
@@ -174,7 +170,6 @@ def analyze(symbol, global_data, vix_level):
         "❌ Weak Signal"
     )
 
-    # Log performance
     log_row = {
         "date": date_to_use,
         "symbol": symbol,
@@ -203,4 +198,9 @@ def analyze(symbol, global_data, vix_level):
         f"- 🎯 Target: ₹{target}",
         f"- ⛔ Stop-Loss: ₹{stop}",
         f"- 🚀 Volume Surge: `{vol_surge}`",
-        f"- 📊
+        f"- 🧮 Signal Score: `{score}`",
+        f"### Trade Signal: {tag} ⇒ `{'Call' if pcr_sentiment == 'Bullish' else 'Put'}` Option"
+    ]
+
+# 📑 Generate markdown report
+def generate
