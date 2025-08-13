@@ -1,4 +1,5 @@
 # 📊 FnO Tracker Report – 2025-08-13
+- 🌪️ India VIX: `0`
 - 🌐 Dow: Change `Ticker
 ^DJI    483.52
 dtype: float64` (Ticker
@@ -14,24 +15,30 @@ dtype: float64%)
 dtype: float64` (Ticker
 ^GSPC    1.13
 dtype: float64%)
-- ⚠️ SGX Nifty: `Insufficient data`
+- 🌐 SGX Nifty: Change `Ticker
+^NSEI    143.25
+dtype: float64` (Ticker
+^NSEI    0.58
+dtype: float64%)
 ## 📘 BANKNIFTY (Morning Mode)
-- 📈 PCR: `0.93`
-- 🔢 Top Strike: `55500`
+- 🔄 PCR: `0.94` → `Neutral`
+- 🔢 Top Strike: `55000`
 - 📆 Expiry: `28-Aug-2025`
-- 🎫 Symbol: `OPTIDXBANKNIFTY28-08-2025CE55500.00`
-- 💰 Entry: ₹461.7
-- 🎯 Target: ₹692.55
-- ⛔ Stop-Loss: ₹323.19
-- 🌐 Global Sentiment: `852.3299999999999`
-### Trade Signal: ✅ Confirmed ⇒ `Call` Option
+- 🎫 Symbol: `OPTIDXBANKNIFTY28-08-2025PE55000.00`
+- 💰 Entry: ₹331.75
+- 🎯 Target: ₹497.62
+- ⛔ Stop-Loss: ₹232.22
+- 🚀 Volume Surge: `False`
+- 🧮 Signal Score: `1045.58`
+### Trade Signal: ✅ Strong Signal ⇒ `Put` Option
 ## 📘 NIFTY (Morning Mode)
-- 📈 PCR: `0.87`
+- 🔄 PCR: `1.05` → `Neutral`
 - 🔢 Top Strike: `24600`
 - 📆 Expiry: `14-Aug-2025`
-- 🎫 Symbol: `OPTIDXNIFTY14-08-2025CE24600.00`
-- 💰 Entry: ₹71.95
-- 🎯 Target: ₹107.93
-- ⛔ Stop-Loss: ₹50.36
-- 🌐 Global Sentiment: `852.3299999999999`
-### Trade Signal: ✅ Confirmed ⇒ `Call` Option
+- 🎫 Symbol: `OPTIDXNIFTY14-08-2025PE24600.00`
+- 💰 Entry: ₹40.45
+- 🎯 Target: ₹60.68
+- ⛔ Stop-Loss: ₹28.32
+- 🚀 Volume Surge: `False`
+- 🧮 Signal Score: `1045.58`
+### Trade Signal: ✅ Strong Signal ⇒ `Put` Option
