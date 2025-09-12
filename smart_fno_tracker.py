@@ -44,13 +44,15 @@ def fetch_global_indices():
             summary[name] = {"error": str(e)}
     return summary
 
-# 🌪️ VIX data using nsefetch
+# 🌪️ India VIX fetch using nse_index_quote (reliable method)
+from nsepython import nse_index_quote
+
 def fetch_vix():
     try:
-        url = "https://www.nseindia.com/api/option-chain-indices?symbol=INDIA%20VIX"
-        data = nsefetch(url)
-        vix_value = data["records"]["underlyingValue"]
-        return float(vix_value)
+        vix_data = nse_index_quote("India VIX")
+        vix_value = float(vix_data.get("lastPrice", 0))
+        print(f"🌪️ India VIX fetched: {vix_value}")
+        return vix_value
     except Exception as e:
         print(f"⚠️ VIX fetch error: {e}")
         return 0
