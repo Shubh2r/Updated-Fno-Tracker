@@ -5,7 +5,7 @@ import datetime
 import time
 import argparse
 import yfinance as yf
-from nsepython import nsefetch
+from nse_fetcher import fetch_option_chain, fetch_vix
 
 # 🔧 Add this helper function below the imports
 def fetch_nse_json(url):
@@ -74,9 +74,8 @@ from nsepython import nsefetch
 
 def fetch_vix():
     try:
-        url = "https://www.nseindia.com/api/option-chain-indices?symbol=INDIA%20VIX"
-        data = fetch_nse_json(url)
-        vix_value = float(data.get("records", {}).get("underlyingValue", 0))
+        vix_data = fetch_vix()
+        vix_value = float(vix_data.get("underlyingValue", 0))
         print(f"🌪️ India VIX fetched: {vix_value}")
         return vix_value
     except Exception as e:
@@ -119,9 +118,7 @@ def extract_flattened_rows(option_data, spot):
 # 📦 Fetch and save FnO data
 def fetch_and_save(symbol):
     try:
-        url = f"https://www.nseindia.com/api/option-chain-indices?symbol={symbol}"
-        data = fetch_nse_json(url)
-        records = data.get("records", {})
+        records = fetch_option_chain(symbol)
         spot = float(records.get("underlyingValue", 0))
         raw = records.get("data", [])
 
