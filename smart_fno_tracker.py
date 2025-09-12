@@ -6,6 +6,18 @@ import argparse
 import yfinance as yf
 from nsepython import nsefetch
 
+# 🔧 Add this helper function below the imports
+def fetch_nse_json(url):
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "application/json",
+        "Referer": "https://www.nseindia.com"
+    }
+    session = requests.Session()
+    session.get("https://www.nseindia.com", headers=headers)  # Warm-up to get cookies
+    response = session.get(url, headers=headers)
+    return response.json()
+
 # 📁 Create folders
 os.makedirs("data", exist_ok=True)
 os.makedirs("report", exist_ok=True)
@@ -51,15 +63,7 @@ from nsepython import nsefetch
 def fetch_vix():
     try:
         url = "https://www.nseindia.com/api/option-chain-indices?symbol=INDIA%20VIX"
-        headers = {
-            "User-Agent": "Mozilla/5.0",
-            "Accept": "application/json",
-            "Referer": "https://www.nseindia.com"
-        }
-        session = requests.Session()
-        session.get("https://www.nseindia.com", headers=headers)  # Warm-up to get cookies
-        response = session.get(url, headers=headers)
-        data = response.json()
+        data = fetch_nse_json(url)
         vix_value = float(data["records"]["underlyingValue"])
         print(f"🌪️ India VIX fetched: {vix_value}")
         return vix_value
@@ -104,16 +108,7 @@ def extract_flattened_rows(option_data, spot):
 def fetch_and_save(symbol):
     try:
         url = f"https://www.nseindia.com/api/option-chain-indices?symbol={symbol}"
-        headers = {
-            "User-Agent": "Mozilla/5.0",
-            "Accept": "application/json",
-            "Referer": "https://www.nseindia.com"
-        }
-        session = requests.Session()
-        session.get("https://www.nseindia.com", headers=headers)
-        response = session.get(url, headers=headers)
-        data = response.json()
-
+        data = fetch_nse_json(url)
         spot = float(data["records"]["underlyingValue"])
         raw = data["records"]["data"]
 
