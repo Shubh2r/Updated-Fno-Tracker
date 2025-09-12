@@ -3,7 +3,7 @@ import os
 import datetime
 import argparse
 import yfinance as yf
-from nsepython import nse_optionchain_scrapper, nse_index_quote
+from nsepython import nse_optionchain_scrapper, nsefetch
 
 # 📁 Create folders
 os.makedirs("data", exist_ok=True)
