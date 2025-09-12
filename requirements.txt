@@ -1,4 +1,5 @@
 nsepython==2.97
+requests
 pandas
 matplotlib
 yfinance
