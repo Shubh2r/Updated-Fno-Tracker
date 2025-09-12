@@ -1,4 +1,4 @@
-nsepython==4.0.0
+nsepython==2.97
 pandas
 matplotlib
 yfinance
