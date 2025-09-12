@@ -50,12 +50,7 @@ from nsepython import nsefetch
 def fetch_vix():
     try:
         url = "https://www.nseindia.com/api/option-chain-indices?symbol=INDIA%20VIX"
-        headers = {
-            "User-Agent": "Mozilla/5.0",
-            "Accept": "application/json",
-            "Referer": "https://www.nseindia.com"
-        }
-        data = nsefetch(url, headers=headers)
+        data = nsefetch(url)
         vix_value = float(data["records"]["underlyingValue"])
         print(f"🌪️ India VIX fetched: {vix_value}")
         return vix_value
