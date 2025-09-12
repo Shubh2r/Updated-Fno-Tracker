@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import requests
 import datetime
+import time
 import argparse
 import yfinance as yf
 from nsepython import nsefetch
