@@ -101,7 +101,9 @@ def fetch_and_save(symbol):
         clean_rows = [r for r in rows if r]
         date_save = tomorrow_str if MODE == "evening" else today_str
         pd.DataFrame(clean_rows).to_csv(f"data/{symbol}_{date_save}.csv", index=False)
+
         print(f"✅ Saved {len(clean_rows)} rows for {symbol} ({MODE})")
+        print(f"📁 Saved to: data/{symbol}_{date_save}.csv")  # 👈 Add this line
     except Exception as e:
         print(f"⚠️ Error fetching {symbol}: {e}")
 
