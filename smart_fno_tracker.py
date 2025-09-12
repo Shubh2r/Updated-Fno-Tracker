@@ -3,7 +3,7 @@ import os
 import datetime
 import argparse
 import yfinance as yf
-from nsepython import nse_optionchain_scrapper, nsefetch
+from nsepython import nse_index_quote
 
 # 📁 Create folders
 os.makedirs("data", exist_ok=True)
@@ -49,9 +49,8 @@ from nsepython import nsefetch
 
 def fetch_vix():
     try:
-        url = "https://www.nseindia.com/api/option-chain-indices?symbol=INDIA%20VIX"
-        data = nsefetch(url)
-        vix_value = float(data["records"]["underlyingValue"])
+        vix_data = nse_index_quote("India VIX")
+        vix_value = float(vix_data.get("lastPrice", 0))
         print(f"🌪️ India VIX fetched: {vix_value}")
         return vix_value
     except Exception as e:
@@ -94,17 +93,18 @@ def extract_flattened_rows(option_data, spot):
 # 📦 Fetch and save FnO data
 def fetch_and_save(symbol):
     try:
-        chain = nse_optionchain_scrapper(symbol)
-        spot = float(chain["records"]["underlyingValue"])
-        raw = chain["records"]["data"]
+        url = f"https://www.nseindia.com/api/option-chain-indices?symbol={symbol}"
+        data = nsefetch(url)
+        spot = float(data["records"]["underlyingValue"])
+        raw = data["records"]["data"]
 
         rows = [extract_flattened_rows(row, spot) for row in raw]
         clean_rows = [r for r in rows if r]
-        date_save = tomorrow_str if MODE == "evening" else today_str
+        date_save = date_str
         pd.DataFrame(clean_rows).to_csv(f"data/{symbol}_{date_save}.csv", index=False)
 
         print(f"✅ Saved {len(clean_rows)} rows for {symbol} ({MODE})")
-        print(f"📁 Saved to: data/{symbol}_{date_save}.csv")  # 👈 Add this line
+        print(f"📁 Saved to: data/{symbol}_{date_save}.csv")
     except Exception as e:
         print(f"⚠️ Error fetching {symbol}: {e}")
 
