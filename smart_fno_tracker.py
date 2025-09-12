@@ -49,8 +49,9 @@ from nsepython import nsefetch
 
 def fetch_vix():
     try:
-        vix_data = nse_index_quote("India VIX")
-        vix_value = float(vix_data.get("lastPrice", 0))
+        url = "https://www.nseindia.com/api/option-chain-indices?symbol=INDIA%20VIX"
+        data = nsefetch(url)
+        vix_value = float(data["records"]["underlyingValue"])
         print(f"🌪️ India VIX fetched: {vix_value}")
         return vix_value
     except Exception as e:
