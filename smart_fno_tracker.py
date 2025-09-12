@@ -14,9 +14,20 @@ def fetch_nse_json(url):
         "Referer": "https://www.nseindia.com"
     }
     session = requests.Session()
-    session.get("https://www.nseindia.com", headers=headers)  # Warm-up to get cookies
-    response = session.get(url, headers=headers)
-    return response.json()
+    try:
+        # Warm-up to get cookies
+        session.get("https://www.nseindia.com", headers=headers, timeout=10)
+        time.sleep(1)  # Give NSE a moment
+
+        response = session.get(url, headers=headers, timeout=10)
+        if response.status_code != 200:
+            raise Exception(f"HTTP {response.status_code}")
+        if not response.text.strip().startswith("{"):
+            raise Exception("Response is not JSON")
+        return response.json()
+    except Exception as e:
+        print(f"⚠️ NSE fetch failed for {url}: {e}")
+        return {}
 
 # 📁 Create folders
 os.makedirs("data", exist_ok=True)
@@ -64,7 +75,7 @@ def fetch_vix():
     try:
         url = "https://www.nseindia.com/api/option-chain-indices?symbol=INDIA%20VIX"
         data = fetch_nse_json(url)
-        vix_value = float(data["records"]["underlyingValue"])
+        vix_value = float(data.get("records", {}).get("underlyingValue", 0))
         print(f"🌪️ India VIX fetched: {vix_value}")
         return vix_value
     except Exception as e:
@@ -109,8 +120,12 @@ def fetch_and_save(symbol):
     try:
         url = f"https://www.nseindia.com/api/option-chain-indices?symbol={symbol}"
         data = fetch_nse_json(url)
-        spot = float(data["records"]["underlyingValue"])
-        raw = data["records"]["data"]
+        records = data.get("records", {})
+        spot = float(records.get("underlyingValue", 0))
+        raw = records.get("data", [])
+
+        if not raw:
+            raise Exception("No option chain data returned")
 
         rows = [extract_flattened_rows(row, spot) for row in raw]
         clean_rows = [r for r in rows if r]
