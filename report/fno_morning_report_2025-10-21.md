@@ -15,6 +15,10 @@ dtype: float64%)
 dtype: float64` (Ticker
 ^GSPC    1.07
 dtype: float64%)
-- ⚠️ SGX Nifty: `Insufficient data`
+- 🌐 SGX Nifty: Change `Ticker
+^NSEI    25.45
+dtype: float64` (Ticker
+^NSEI    0.1
+dtype: float64%)
 ⚠️ BANKNIFTY data not available. Skipping...
 ⚠️ NIFTY data not available. Skipping...
