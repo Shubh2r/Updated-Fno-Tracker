@@ -6,7 +6,7 @@ dtype: float64` (Ticker
 ^DJI   -1.65
 dtype: float64%)
 - 🌐 Nasdaq: Change `Ticker
-^IXIC   -536.11
+^IXIC   -536.1
 dtype: float64` (Ticker
 ^IXIC   -2.29
 dtype: float64%)
@@ -15,6 +15,10 @@ dtype: float64%)
 dtype: float64` (Ticker
 ^GSPC   -1.66
 dtype: float64%)
-- ⚠️ SGX Nifty: `Insufficient data`
+- 🌐 SGX Nifty: Change `Ticker
+^NSEI    53.25
+dtype: float64` (Ticker
+^NSEI    0.21
+dtype: float64%)
 ⚠️ BANKNIFTY data not available. Skipping...
 ⚠️ NIFTY data not available. Skipping...
