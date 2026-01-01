@@ -16,9 +16,9 @@ dtype: float64` (Ticker
 ^GSPC   -0.74
 dtype: float64%)
 - 🌐 SGX Nifty: Change `Ticker
-^NSEI    21.6
+^NSEI    12.85
 dtype: float64` (Ticker
-^NSEI    0.08
+^NSEI    0.05
 dtype: float64%)
 ⚠️ BANKNIFTY data not available. Skipping...
 ⚠️ NIFTY data not available. Skipping...
